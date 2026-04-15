@@ -10,24 +10,38 @@
 <style>
 body { font-family: Arial; padding: 20px; }
 button { padding: 10px; margin: 5px; cursor:pointer; }
+input { padding: 8px; margin: 5px 0; width: 100%; }
+
 .hidden { display: none; }
 
+/* Modal Fix */
 .modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
   justify-content: center;
   align-items: center;
+  background: rgba(0,0,0,0.5);
 }
+.modal.show {
+  display: flex;
+}
+
 .modal-box {
   background: #fff;
   padding: 20px;
   width: 300px;
-  border-radius: 8px;
+  border-radius: 10px;
+  animation: popup 0.2s ease;
 }
-input { width: 100%; padding: 8px; margin: 5px 0; }
+
+@keyframes popup {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 
 table {
   width: 100%;
@@ -44,7 +58,7 @@ th, td {
 
 <body>
 
-<!-- SCREEN 1 -->
+<!-- HOME -->
 <div id="home">
   <h2>📄 PDF Upload</h2>
   <input type="file" id="pdfUpload">
@@ -54,7 +68,7 @@ th, td {
   <button onclick="startFamily()">➕ புதிய குடும்பம்</button>
 </div>
 
-<!-- SCREEN 2 -->
+<!-- FAMILY SCREEN -->
 <div id="familyScreen" class="hidden">
   <h3>👨‍👩‍👧 குடும்ப உறுப்பினர்கள்</h3>
 
@@ -81,7 +95,7 @@ th, td {
 </div>
 
 <!-- MODAL -->
-<div id="modal" class="modal hidden">
+<div id="modal" class="modal" onclick="outsideClick(event)">
   <div class="modal-box">
     <h4>உறுப்பினர் சேர்க்க</h4>
 
@@ -104,21 +118,12 @@ let currentFamily = [];
 let usedNumbers = new Set();
 let isManualMode = false;
 
-// Show other party input
-document.querySelectorAll('input[name="party"]').forEach(r => {
-  r.addEventListener("change", () => {
-    document.getElementById("otherParty").classList.toggle(
-      "hidden", r.value !== "OTHER"
-    );
-  });
-});
-
 // OCR
 function processPDF() {
   const file = document.getElementById("pdfUpload").files[0];
   if (!file) return alert("PDF upload செய்யவும்");
 
-  alert("Processing... (Wait)");
+  alert("Processing...");
 
   Tesseract.recognize(file, 'tam+eng').then(({ data: { text } }) => {
     extractedText = text;
@@ -126,21 +131,29 @@ function processPDF() {
   });
 }
 
-// Start Family Screen
+// Navigation
 function startFamily() {
   document.getElementById("home").classList.add("hidden");
   document.getElementById("familyScreen").classList.remove("hidden");
 }
 
-// Modal Controls
+// Modal
 function openModal() {
-  document.getElementById("modal").classList.remove("hidden");
+  document.getElementById("modal").classList.add("show");
   resetModal();
 }
+
 function closeModal() {
-  document.getElementById("modal").classList.add("hidden");
+  document.getElementById("modal").classList.remove("show");
   resetModal();
 }
+
+function outsideClick(e) {
+  if (e.target.id === "modal") {
+    closeModal();
+  }
+}
+
 function resetModal() {
   document.getElementById("memberNo").value = "";
   document.getElementById("name").value = "";
@@ -149,7 +162,7 @@ function resetModal() {
   isManualMode = false;
 }
 
-// OCR search (basic)
+// OCR search
 function findPerson(no) {
   const lines = extractedText.split("\n");
   for (let i = 0; i < lines.length; i++) {
@@ -164,7 +177,7 @@ function findPerson(no) {
   return null;
 }
 
-// Add Member Logic
+// Add Member
 function handleAdd() {
   const no = document.getElementById("memberNo").value;
 
@@ -204,7 +217,7 @@ function handleAdd() {
   }
 }
 
-// Render Table
+// Render
 function render() {
   const tbody = document.getElementById("membersTable");
   tbody.innerHTML = "";
@@ -219,9 +232,19 @@ function render() {
   });
 }
 
-// Save Family
+// Party toggle
+document.querySelectorAll('input[name="party"]').forEach(r => {
+  r.addEventListener("change", () => {
+    document.getElementById("otherParty").classList.toggle(
+      "hidden", r.value !== "OTHER"
+    );
+  });
+});
+
+// Save
 function saveFamily() {
   let party = document.querySelector('input[name="party"]:checked')?.value;
+
   if (party === "OTHER") {
     party = document.getElementById("otherParty").value;
   }
@@ -236,4 +259,4 @@ function saveFamily() {
 </script>
 
 </body>
-</html
+</html>
